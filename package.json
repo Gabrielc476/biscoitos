@@ -6,7 +6,8 @@
     "test": "jest",
     "test:watch": "jest --watchAll",
     "start": "node dist/infra/http/server.js",
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
