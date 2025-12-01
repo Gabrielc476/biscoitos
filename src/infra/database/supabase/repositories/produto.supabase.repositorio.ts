@@ -13,7 +13,7 @@ import { ProdutoMapper } from '../mappers/produto.mapper';
  * usando o Supabase como banco de dados.
  */
 export class ProdutoSupabaseRepositorio implements IProdutoRepositorio {
-  
+
   // A classe usa o cliente Supabase importado
   private readonly client = supabaseClient;
 
@@ -69,6 +69,8 @@ export class ProdutoSupabaseRepositorio implements IProdutoRepositorio {
     // Traduz da Entidade de Domínio para o formato do Supabase
     const dadosPersistencia = ProdutoMapper.toPersistence(produto);
 
+    console.log(`🔵 [Repo] Salvando produto ${produto.id} no Supabase. Dados:`, JSON.stringify(dadosPersistencia));
+
     // O 'upsert' do Supabase é perfeito para "salvar".
     // Ele cria se o 'id' não existir, ou atualiza se existir.
     const { error } = await this.client
@@ -76,9 +78,10 @@ export class ProdutoSupabaseRepositorio implements IProdutoRepositorio {
       .upsert(dadosPersistencia);
 
     if (error) {
-      console.error('Erro ao salvar produto no Supabase:', error);
+      console.error('🔴 [Repo] Erro ao salvar produto no Supabase:', error);
       throw new Error(`Erro ao salvar produto: ${error.message}`);
     }
+    console.log(`🟢 [Repo] Produto ${produto.id} salvo com sucesso.`);
   }
 
   /**
@@ -107,16 +110,38 @@ export class ProdutoSupabaseRepositorio implements IProdutoRepositorio {
     // Para implementar este método, precisamos primeiro
     // adicionar o campo 'ativo' à nossa entidade Produto
     // e à nossa tabela 'produtos' no Supabase.
-    
+
     // Quando tivermos o campo 'ativo':
     // const { data, error } = await this.client
     //   .from('produtos')
     //   .select('*')
     //   .eq('ativo', true) // <--- A MUDANÇA ESTÁ AQUI
     //   .order('nome', { ascending: true });
-    
+
     // Por enquanto, ele apenas retorna todos:
     console.warn("Método 'listarTodosAtivos' está retornando todos os produtos. Adicione o campo 'ativo' para filtrar.");
     return this.listarTodos();
+  }
+
+  async uploadImagem(arquivo: { buffer: Buffer; mimetype: string }, nomeArquivo: string): Promise<string> {
+    // 1. Upload para o bucket 'produtos'
+    const { data, error } = await this.client.storage
+      .from('produtos')
+      .upload(nomeArquivo, arquivo.buffer, {
+        contentType: arquivo.mimetype,
+        upsert: true,
+      });
+
+    if (error) {
+      console.error('Erro ao fazer upload da imagem:', error);
+      throw new Error(`Erro ao fazer upload: ${error.message}`);
+    }
+
+    // 2. Obter URL pública
+    const { data: publicUrlData } = this.client.storage
+      .from('produtos')
+      .getPublicUrl(data.path);
+
+    return publicUrlData.publicUrl;
   }
 }

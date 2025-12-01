@@ -8,12 +8,11 @@ import { Produto } from '../../../domain/entities/produto.entity';
  * Caso de Uso para a criação de um novo Produto.
  */
 export class CriarProdutoUseCase
-  implements IUseCase<CriarProdutoInputDTO, CriarProdutoOutputDTO>
-{
+  implements IUseCase<CriarProdutoInputDTO, CriarProdutoOutputDTO> {
   // Injetamos a interface do repositório
   constructor(
     private readonly produtoRepo: IProdutoRepositorio
-  ) {}
+  ) { }
 
   async executar(input: CriarProdutoInputDTO): Promise<CriarProdutoOutputDTO> {
     // 1. Validação (Opcional, pois o construtor da entidade já valida)
@@ -32,8 +31,9 @@ export class CriarProdutoUseCase
       input.quantidadeEstoque,
       input.precoCustoEmCentavos,
       input.precoVendaEmCentavos,
+      input.imagemUrl // [NOVO] - Passando a URL da imagem
     );
-    
+
     // (A entidade 'Produto' já tem o 'ativo: true' por padrão
     // se tivéssemos essa versão da entidade)
 

@@ -4,10 +4,10 @@ import { supabaseClient } from '../supabase-client';
 import { VendaMapper } from '../mappers/venda.mapper';
 import { ItemVendaMapper } from '../mappers/item-venda.mapper';
 // Importamos a Entidade para poder checar se um item é promocional
-import { ItemVenda } from '../../../../domain/entities/item-venda.entity'; 
+import { ItemVenda } from '../../../../domain/entities/item-venda.entity';
 
 export class VendaSupabaseRepositorio implements IVendaRepositorio {
-  
+
   private readonly client = supabaseClient;
 
   /**
@@ -50,12 +50,11 @@ export class VendaSupabaseRepositorio implements IVendaRepositorio {
 
     // 2. Salva os Itens
     try {
-      // [CORREÇÃO FINAL] Filtra itens promocionais sem produtoId antes de persistir
-      const itensReais = venda.itens.filter(
-          (item: ItemVenda) => item.produtoId !== null 
-      );
-      
-      const dadosItens = itensReais.map((item) =>
+      // [CORREÇÃO] Permitir itens promocionais (sem produtoId)
+      // Antes filtravamos: venda.itens.filter(item => item.produtoId !== null)
+      // Agora salvamos tudo.
+
+      const dadosItens = venda.itens.map((item) =>
         ItemVendaMapper.toPersistence(item, venda.id),
       );
 
@@ -69,7 +68,7 @@ export class VendaSupabaseRepositorio implements IVendaRepositorio {
       // ROLLBACK MANUAL: Se os itens falharem, deletamos a Venda "órfã"
       console.error('Erro ao criar Itens da Venda, deletando cabeçalho:', error);
       await this.client.from('vendas').delete().eq('id', venda.id);
-      
+
       throw new Error(`Erro ao salvar Itens da Venda: ${error.message}`);
     }
   }
@@ -96,7 +95,7 @@ export class VendaSupabaseRepositorio implements IVendaRepositorio {
    */
   async salvar(venda: Venda): Promise<void> {
     const dadosVenda = VendaMapper.toPersistence(venda);
-    
+
     const { error } = await this.client
       .from('vendas')
       .update({ status: dadosVenda.status })

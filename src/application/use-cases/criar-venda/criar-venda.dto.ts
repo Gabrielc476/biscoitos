@@ -10,6 +10,10 @@ interface ItemVendaInput {
 // --- INPUT PORT ---
 export interface CriarVendaInputDTO {
   itens: ItemVendaInput[];
+  promocoesSelecionadas?: {
+    family?: boolean;
+    special?: boolean;
+  };
   // clienteId?: string;
   // metodoPagamento?: string;
 }

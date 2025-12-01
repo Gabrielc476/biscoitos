@@ -1,5 +1,3 @@
-// /src/domain/repositories/ipromocao.repositorio.ts
-
 import { Promocao } from '../entities/promocao.entity';
 
 export interface IPromocaoRepositorio {
@@ -7,7 +5,7 @@ export interface IPromocaoRepositorio {
    * Busca todas as promoções que estão ativas no momento.
    * @returns Uma lista de entidades Promocao.
    */
-  buscarTodasAtivas(): Promise<Promocao[]>;
+  buscarAtivas(): Promise<Promocao[]>;
 
   /**
    * Busca uma promoção pelo seu ID.

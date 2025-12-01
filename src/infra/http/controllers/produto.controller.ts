@@ -1,22 +1,20 @@
 import { Request, Response } from 'express';
 import { CriarProdutoUseCase } from '../../../application/use-cases/criar-produto/criar-produto.usecase';
 import { ListarProdutosUseCase } from '../../../application/use-cases/listar-produtos/listar-produtos.usecase';
-// [NOVO] Importe o novo caso de uso
 import { AtualizarEstoqueUseCase } from '../../../application/use-cases/atualizar-estoque/atualizar-estoque.usecase';
+import { UploadImagemProdutoUseCase } from '../../../application/use-cases/upload-imagem/upload-imagem.usecase';
 
 export class ProdutoController {
   constructor(
     private readonly criarProdutoUseCase: CriarProdutoUseCase,
     private readonly listarProdutosUseCase: ListarProdutosUseCase,
-    // [NOVO] Injete o caso de uso aqui
     private readonly atualizarEstoqueUseCase: AtualizarEstoqueUseCase,
-  ) {}
-
-  // ... (handleCriarProduto e handleListarProdutos continuam iguais) ...
+    private readonly uploadImagemProdutoUseCase: UploadImagemProdutoUseCase,
+  ) { }
 
   async handleCriarProduto(req: Request, res: Response): Promise<Response> {
     try {
-      const input = req.body; 
+      const input = req.body;
       const output = await this.criarProdutoUseCase.executar(input);
       return res.status(201).json(output);
     } catch (error: any) {
@@ -34,7 +32,7 @@ export class ProdutoController {
   }
 
   /**
-   * [NOVO] Lida com a requisição de Atualizar Estoque (PATCH /produtos/:id/estoque)
+   * Lida com a requisição de Atualizar Estoque (PATCH /produtos/:id/estoque)
    * Body esperado: { "novoEstoque": 50 }
    */
   async handleAtualizarEstoque(req: Request, res: Response): Promise<Response> {
@@ -55,6 +53,32 @@ export class ProdutoController {
     } catch (error: any) {
       return res.status(400).json({
         message: error.message || 'Erro ao atualizar estoque.',
+      });
+    }
+  }
+
+  /**
+   * Lida com o upload de imagem (POST /produtos/upload)
+   * Espera um arquivo 'file' no multipart/form-data.
+   */
+  async handleUploadImagem(req: Request, res: Response): Promise<Response> {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'Nenhum arquivo enviado.' });
+      }
+
+      const output = await this.uploadImagemProdutoUseCase.executar({
+        arquivo: {
+          buffer: req.file.buffer,
+          mimetype: req.file.mimetype,
+          originalname: req.file.originalname,
+        },
+      });
+
+      return res.status(200).json(output);
+    } catch (error: any) {
+      return res.status(400).json({
+        message: error.message || 'Erro ao fazer upload da imagem.',
       });
     }
   }

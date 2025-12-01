@@ -11,6 +11,7 @@ interface ProdutoSupabaseRow {
   preco_venda_em_centavos: number;
   criado_em: string; // O Supabase retorna datas como strings (TIMESTAMPTZ)
   atualizado_em: string;
+  imagem_url?: string; // [NOVO]
   // 'ativo' seria adicionado aqui se o tivéssemos na tabela
 }
 
@@ -30,14 +31,10 @@ export class ProdutoMapper {
       row.quantidade_estoque,
       row.preco_custo_em_centavos,
       row.preco_venda_em_centavos,
+      row.imagem_url // [NOVO]
     );
 
     // 2. "Hidrata" os campos que não estão no construtor (como datas)
-    // Precisamos converter a string de data do Supabase para um objeto Date.
-    
-    // (Se 'criadoEm' e 'atualizadoEm' forem 'private' na entidade,
-    // precisaríamos de um método de hidratação ou 'Object.assign'.
-    // Como estão públicos no seu exemplo, podemos fazer assim:)
     entidade.criadoEm = new Date(row.criado_em);
     entidade.atualizadoEm = new Date(row.atualizado_em);
 
@@ -49,22 +46,13 @@ export class ProdutoMapper {
    * que o Supabase entende (snake_case) para salvar.
    */
   public static toPersistence(entidade: Produto) {
-    // Note que não incluímos 'criado_em' ou 'atualizado_em' aqui.
-    // O ideal é que o próprio banco de dados (PostgreSQL)
-    // gerencie esses campos automaticamente (ex: com 'DEFAULT now()'
-    // e 'triggers' para 'atualizado_em').
-    
-    // Se o banco não gerencia o 'atualizado_em' automaticamente,
-    // você o incluiria aqui:
-    // atualizado_em: entidade.atualizadoEm.toISOString(),
-    
     return {
       id: entidade.id,
       nome: entidade.nome,
       quantidade_estoque: entidade.quantidadeEstoque,
       preco_custo_em_centavos: entidade.precoCustoEmCentavos,
       preco_venda_em_centavos: entidade.precoVendaEmCentavos,
-      // 'ativo' seria: ativo: entidade.ativo,
+      imagem_url: entidade.imagemUrl, // [NOVO]
     };
   }
 }

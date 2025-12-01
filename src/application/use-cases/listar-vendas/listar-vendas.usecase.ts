@@ -7,11 +7,10 @@ import { Venda } from '../../../domain/entities/venda.entity';
  * Caso de Uso para listar todas as Vendas (Histórico).
  */
 export class ListarVendasUseCase
-  implements IUseCase<ListarVendasInputDTO, ListarVendasOutputDTO[]>
-{
+  implements IUseCase<ListarVendasInputDTO, ListarVendasOutputDTO[]> {
   constructor(
     private readonly vendaRepo: IVendaRepositorio
-  ) {}
+  ) { }
 
   async executar(input: ListarVendasInputDTO): Promise<ListarVendasOutputDTO[]> {
     // 1. Busca as vendas no repositório

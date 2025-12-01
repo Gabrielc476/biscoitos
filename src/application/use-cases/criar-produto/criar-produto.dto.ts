@@ -8,6 +8,7 @@ export interface CriarProdutoInputDTO {
   quantidadeEstoque: number;
   precoCustoEmCentavos: number;
   precoVendaEmCentavos: number;
+  imagemUrl?: string; // [NOVO]
 }
 
 // --- OUTPUT PORT ---

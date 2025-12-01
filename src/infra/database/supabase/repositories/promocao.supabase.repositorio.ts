@@ -7,14 +7,14 @@ import { PromocaoMapper } from '../mappers/promocao.mapper';
  * Implementação do Repositório de Promoções usando Supabase.
  */
 export class PromocaoSupabaseRepositorio implements IPromocaoRepositorio {
-  
+
   private readonly client = supabaseClient;
 
   /**
    * Busca todas as promoções que estão ativas.
    * (Usado pelo Motor de Promoção).
    */
-  async buscarTodasAtivas(): Promise<Promocao[]> {
+  async buscarAtivas(): Promise<Promocao[]> {
     const { data, error } = await this.client
       .from('promocoes')
       .select('*')

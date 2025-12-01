@@ -55,4 +55,15 @@ export interface IProdutoRepositorio {
    * Nota: Não há 'deletar' pois usamos 'desativar' (soft-delete),
    * que é gerenciado pela entidade e persistido pelo método 'salvar'.
    */
+  /**
+   * Faz o upload de uma imagem e retorna a URL pública.
+   * @param arquivo O arquivo a ser enviado (buffer e metadados).
+   * @param nomeArquivo O nome desejado para o arquivo no storage.
+   */
+  uploadImagem(arquivo: IArquivo, nomeArquivo: string): Promise<string>;
+}
+
+export interface IArquivo {
+  buffer: Buffer;
+  mimetype: string;
 }

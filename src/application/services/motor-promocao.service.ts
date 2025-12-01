@@ -9,6 +9,11 @@ export interface ResultadoCalculo {
   totalFinalEmCentavos: number;
 }
 
+export interface FlagsPromocao {
+  family?: boolean;
+  special?: boolean;
+}
+
 /**
  * Este serviço contém a lógica de negócio complexa para
  * aplicar promoções a um carrinho de produtos.
@@ -20,72 +25,162 @@ export class MotorPromocaoService {
   public calcular(
     produtos: Produto[], // Lista de produtos no carrinho (ex: 3 biscoitos)
     promocoes: Promocao[], // Lista de promoções ativas do banco
+    flags: FlagsPromocao = {} // [NOVO] Flags vindas do frontend
   ): ResultadoCalculo {
-    
-    // 1. Tenta encontrar a promoção "Leve 2 por R$ 10" para Biscoitos
-    const promoBiscoito = promocoes.find(
-      (p) =>
-        p.ativa &&
-        p.tipo === TipoPromocao.LEVE_X_PAGUE_Y_PRECO_FIXO &&
-        p.nome.includes('2 por R$ 10'), // Simplificação
-    );
 
     let itensProcessados: ItemVenda[] = [];
     let totalFinalEmCentavos = 0;
-    
-    const produtosElegiveis = produtos; 
 
-    if (promoBiscoito) {
-      const qtdParaAtivar = promoBiscoito.condicao_minimoItens!; // Ex: 2
-      const precoPromo = promoBiscoito.acao_precoFixoEmCentavos!; // Ex: 1000
+    // Separa produtos por preço para aplicar regras específicas
+    const produtos590 = produtos.filter(p => p.precoVendaEmCentavos === 590);
+    const produtos650 = produtos.filter(p => p.precoVendaEmCentavos === 650);
+    const outrosProdutos = produtos.filter(p => p.precoVendaEmCentavos !== 590 && p.precoVendaEmCentavos !== 650);
 
-      const numPares = Math.floor(produtosElegiveis.length / qtdParaAtivar);
-      const numAvulsos = produtosElegiveis.length % qtdParaAtivar;
+    // --- 1. Promoção "Amigos e Família" (R$ 5,90) ---
+    // Regra: 2 por R$ 8,00. Avulso R$ 4,60.
+    if (flags.family && produtos590.length > 0) {
+      const qtd = produtos590.length;
+      const pares = Math.floor(qtd / 2);
+      const avulsos = qtd % 2;
 
-      // 2. Adiciona os "Pares" (pacotes promocionais)
-      if (numPares > 0) {
-        // [CORREÇÃO] Usando o construtor auxiliar que define produtoId = null
-        const itemPromocional = ItemVenda.createPromotionItem(
+      if (pares > 0) {
+        const itemPar = ItemVenda.createPromotionItem(
           uuidv4(),
-          promoBiscoito.nome, // Ex: "Promo Biscoitos 2 por R$ 10"
-          numPares * qtdParaAtivar, // Quantidade de produtos (ex: 2, 4, 6)
-          precoPromo * numPares, // Preço pago (Ex: 1000 * 1 par = 1000)
+          "Promo Amigos e Família (2 por R$ 8,00)",
+          pares * 2,
+          pares * 800 // 800 centavos por par
         );
-        
-        itensProcessados.push(itemPromocional);
-        totalFinalEmCentavos += itemPromocional.precoTotalPagoEmCentavos;
+        itensProcessados.push(itemPar);
+        totalFinalEmCentavos += itemPar.precoTotalPagoEmCentavos;
       }
 
-      // 3. Adiciona os "Avulsos" (produtos que sobraram)
-      if (numAvulsos > 0) {
-        // Pega o último item (o avulso)
-        const produtoAvulso = produtosElegiveis[produtosElegiveis.length - 1];
+      if (avulsos > 0) {
+        // Pega um produto de exemplo para manter o ID e nome corretos
+        const prodExemplo = produtos590[0];
         const itemAvulso = new ItemVenda(
           uuidv4(),
-          produtoAvulso.id, // ID real do produto
-          numAvulsos, // 1
-          produtoAvulso.nome,
-          produtoAvulso.precoVendaEmCentavos,
-          produtoAvulso.precoVendaEmCentavos * numAvulsos, // Pagou o preço cheio
+          prodExemplo.id,
+          avulsos,
+          `${prodExemplo.nome} (Promo Família)`,
+          460, // Preço unitário reduzido
+          avulsos * 460
         );
         itensProcessados.push(itemAvulso);
         totalFinalEmCentavos += itemAvulso.precoTotalPagoEmCentavos;
       }
     } else {
-      // 4. Se não houver promoções, apenas adiciona os itens com preço normal
-      // (Esta lógica ainda precisa ser ajustada para agrupar produtos, mas está funcional para 1x1)
-      for (const produto of produtos) {
-        const item = new ItemVenda(
+      // Sem promoção, processa normal
+      outrosProdutos.push(...produtos590);
+    }
+
+    // --- 2. Promoção "2 Especiais" (R$ 6,50) ---
+    // Regra: 2 por R$ 12,00. Avulso preço normal (R$ 6,50).
+    if (flags.special && produtos650.length > 0) {
+      const qtd = produtos650.length;
+      const pares = Math.floor(qtd / 2);
+      const avulsos = qtd % 2;
+
+      if (pares > 0) {
+        const itemPar = ItemVenda.createPromotionItem(
           uuidv4(),
-          produto.id,
-          1,
-          produto.nome,
-          produto.precoVendaEmCentavos,
-          produto.precoVendaEmCentavos,
+          "Promo 2 Especiais (2 por R$ 12,00)",
+          pares * 2,
+          pares * 1200 // 1200 centavos por par
         );
-        itensProcessados.push(item);
-        totalFinalEmCentavos += item.precoTotalPagoEmCentavos;
+        itensProcessados.push(itemPar);
+        totalFinalEmCentavos += itemPar.precoTotalPagoEmCentavos;
       }
+
+      if (avulsos > 0) {
+        // Avulsos pagam preço normal, então jogamos para o processamento padrão
+        // Mas precisamos garantir que eles sejam processados.
+        // Como 'outrosProdutos' vai processar item a item, podemos adicionar lá.
+        // Porém, para manter a ordem ou lógica, vamos processar aqui mesmo.
+        const prodExemplo = produtos650[0];
+        const itemAvulso = new ItemVenda(
+          uuidv4(),
+          prodExemplo.id,
+          avulsos,
+          prodExemplo.nome,
+          650,
+          avulsos * 650
+        );
+        itensProcessados.push(itemAvulso);
+        totalFinalEmCentavos += itemAvulso.precoTotalPagoEmCentavos;
+      }
+    } else {
+      // Sem promoção, processa normal
+      outrosProdutos.push(...produtos650);
+    }
+
+    // --- 2.5. Promoção Genérica do Banco (Ex: "2 por R$ 10") ---
+    // Aplica-se aos produtos restantes (outrosProdutos)
+    const promoBanco = promocoes.find(
+      (p) =>
+        p.ativa &&
+        p.tipo === TipoPromocao.LEVE_X_PAGUE_Y_PRECO_FIXO &&
+        p.nome.includes('2 por R$ 10') // Simplificação baseada no código anterior
+    );
+
+    const produtosParaProcessamentoPadrao: Produto[] = [];
+
+    if (promoBanco && outrosProdutos.length > 0) {
+      // Filtra apenas produtos elegíveis para essa promo (ex: Biscoitos básicos)
+      // Como não temos categoria aqui fácil, vamos assumir que aplica a todos os "outros"
+      // ou poderíamos filtrar por preço se soubéssemos (ex: 550).
+      // Vamos aplicar a todos os 'outrosProdutos' por enquanto, como era antes.
+
+      const qtdParaAtivar = promoBanco.condicao_minimoItens || 2;
+      const precoPromo = promoBanco.acao_precoFixoEmCentavos || 1000;
+
+      const qtd = outrosProdutos.length;
+      const pares = Math.floor(qtd / qtdParaAtivar);
+      const avulsos = qtd % qtdParaAtivar;
+
+      if (pares > 0) {
+        const itemPar = ItemVenda.createPromotionItem(
+          uuidv4(),
+          promoBanco.nome,
+          pares * qtdParaAtivar,
+          pares * precoPromo
+        );
+        itensProcessados.push(itemPar);
+        totalFinalEmCentavos += itemPar.precoTotalPagoEmCentavos;
+      }
+
+      // Os avulsos sobram para o processamento padrão
+      if (avulsos > 0) {
+        // Pega os últimos 'avulsos' itens
+        const sobrou = outrosProdutos.slice(qtd - avulsos);
+        produtosParaProcessamentoPadrao.push(...sobrou);
+      }
+    } else {
+      produtosParaProcessamentoPadrao.push(...outrosProdutos);
+    }
+
+    // --- 3. Processamento Padrão (Sem Promoção) ---
+    // Agrupa por ID para não criar uma linha por item
+    const mapaProdutos = new Map<string, { produto: Produto, qtd: number }>();
+
+    for (const prod of produtosParaProcessamentoPadrao) {
+      if (mapaProdutos.has(prod.id)) {
+        mapaProdutos.get(prod.id)!.qtd++;
+      } else {
+        mapaProdutos.set(prod.id, { produto: prod, qtd: 1 });
+      }
+    }
+
+    for (const [id, dados] of mapaProdutos) {
+      const item = new ItemVenda(
+        uuidv4(),
+        id,
+        dados.qtd,
+        dados.produto.nome,
+        dados.produto.precoVendaEmCentavos,
+        dados.produto.precoVendaEmCentavos * dados.qtd
+      );
+      itensProcessados.push(item);
+      totalFinalEmCentavos += item.precoTotalPagoEmCentavos;
     }
 
     return { itensProcessados, totalFinalEmCentavos };

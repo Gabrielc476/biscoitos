@@ -1,17 +1,19 @@
 export class Produto {
   id: string;
   nome: string;
-  
+
   /** Quantidade física em estoque. */
   quantidadeEstoque: number;
-  
-  /** O preço que você pagou pelo item (em centavos). */
+
+  /** Preço de custo em centavos (ex: 1000 = R$ 10,00) */
   precoCustoEmCentavos: number;
-  
-  /** O preço base que você vende o item (em centavos). */
+
+  /** Preço de venda em centavos (ex: 2000 = R$ 20,00) */
   precoVendaEmCentavos: number;
 
-  // Metadados
+  /** URL da imagem do produto (opcional) */
+  imagemUrl?: string;
+
   criadoEm: Date;
   atualizadoEm: Date;
 
@@ -20,19 +22,15 @@ export class Produto {
     nome: string,
     quantidadeEstoque: number,
     precoCustoEmCentavos: number,
-    precoVendaEmCentavos: number
+    precoVendaEmCentavos: number,
+    imagemUrl?: string
   ) {
     this.id = id;
     this.nome = nome;
     this.quantidadeEstoque = quantidadeEstoque;
     this.precoCustoEmCentavos = precoCustoEmCentavos;
     this.precoVendaEmCentavos = precoVendaEmCentavos;
-    
-    // Validação simples no construtor
-    if (precoVendaEmCentavos < precoCustoEmCentavos) {
-      console.warn(`Atenção: Produto "${nome}" (ID: ${id}) está com preço de venda abaixo do custo.`);
-    }
-
+    this.imagemUrl = imagemUrl;
     this.criadoEm = new Date();
     this.atualizadoEm = new Date();
   }
@@ -54,7 +52,7 @@ export class Produto {
     if (quantidadeVendida <= 0) {
       return; // Nada a fazer
     }
-    
+
     if (this.quantidadeEstoque < quantidadeVendida) {
       throw new Error(`Estoque insuficiente! Necessário: ${quantidadeVendida}, Disponível: ${this.quantidadeEstoque}.`);
     }
@@ -70,11 +68,11 @@ export class Produto {
     if (novoPrecoEmCentavos < 0) {
       throw new Error("O preço de venda não pode ser negativo.");
     }
-    
+
     if (novoPrecoEmCentavos < this.precoCustoEmCentavos) {
-       console.warn(`Atenção: O novo preço de venda (R$ ${novoPrecoEmCentavos / 100}) é menor que o preço de custo (R$ ${this.precoCustoEmCentavos / 100}).`);
+      console.warn(`Atenção: O novo preço de venda (R$ ${novoPrecoEmCentavos / 100}) é menor que o preço de custo (R$ ${this.precoCustoEmCentavos / 100}).`);
     }
-    
+
     this.precoVendaEmCentavos = novoPrecoEmCentavos;
     this.atualizadoEm = new Date();
   }
@@ -87,14 +85,14 @@ export class Produto {
     if (this.precoVendaEmCentavos <= 0) {
       return 0; // Evita divisão por zero
     }
-    
+
     const lucro = this.precoVendaEmCentavos - this.precoCustoEmCentavos;
     const margem = (lucro / this.precoVendaEmCentavos) * 100;
-    
+
     // Retorna arredondado (ex: 19.99)
     return parseFloat(margem.toFixed(2));
   }
-  
+
   /**
    * Retorna o valor total do estoque deste produto (Custo).
    */
@@ -111,7 +109,7 @@ export class Produto {
     const precoEmReais = (this.precoVendaEmCentavos / 100).toFixed(2);
     return `R$ ${precoEmReais.replace('.', ',')}`;
   }
-  
+
   /**
    * Retorna o preço de CUSTO formatado em Reais (R$).
    */
