@@ -1,13 +1,16 @@
 // src/screens/admin/AdminCreateProductScreen.tsx
 import React, { useState } from 'react';
-import { ScrollView, TextInput, Alert } from 'react-native';
+import { ScrollView, TextInput, Alert, Image, TouchableOpacity, ActivityIndicator, View } from 'react-native';
 import styled, { DefaultTheme } from 'styled-components/native';
 import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 
 import { PageContainer } from '@/components/design/PageContainer';
 import { AppText } from '@/components/design/AppText';
 import { LargeButton } from '@/components/design/LargeButton';
 import { useCreateProduct } from '@/hooks/useProduct';
+import { uploadProductImage } from '@/services/productsApi';
 
 type ThemeProps = { theme: DefaultTheme };
 
@@ -29,6 +32,23 @@ const Label = styled(AppText)`
   margin-bottom: 4px;
 `;
 
+const ImagePickerButton = styled.TouchableOpacity`
+  width: 100%;
+  height: 200px;
+  background-color: #f0f0f0;
+  border-radius: 12px;
+  border: 2px dashed #ccc;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 24px;
+  overflow: hidden;
+`;
+
+const SelectedImage = styled.Image`
+  width: 100%;
+  height: 100%;
+`;
+
 export const AdminCreateProductScreen = () => {
   const navigation = useNavigation();
   const { mutate: createProduct, isPending } = useCreateProduct();
@@ -38,8 +58,30 @@ export const AdminCreateProductScreen = () => {
   const [estoque, setEstoque] = useState('');
   const [precoCusto, setPrecoCusto] = useState('');
   const [precoVenda, setPrecoVenda] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleSave = () => {
+  const pickImage = async () => {
+    // Pedir permissão
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permissão necessária', 'Precisamos de acesso à galeria para escolher uma foto.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handleSave = async () => {
     // Validação simples
     if (!nome || !estoque || !precoCusto || !precoVenda) {
       Alert.alert('Atenção', 'Preencha todos os campos do formulário.');
@@ -47,7 +89,6 @@ export const AdminCreateProductScreen = () => {
     }
 
     // Conversão de dados
-    // O backend espera centavos (R$ 5,90 -> 590)
     const custoEmCentavos = Math.round(parseFloat(precoCusto.replace(',', '.')) * 100);
     const vendaEmCentavos = Math.round(parseFloat(precoVenda.replace(',', '.')) * 100);
     const qtdEstoque = parseInt(estoque, 10);
@@ -57,6 +98,22 @@ export const AdminCreateProductScreen = () => {
       return;
     }
 
+    let uploadedImageUrl = undefined;
+
+    // Upload da imagem (se houver)
+    if (imageUri) {
+      try {
+        setIsUploading(true);
+        uploadedImageUrl = await uploadProductImage(imageUri);
+      } catch (error) {
+        Alert.alert('Erro no Upload', 'Não foi possível enviar a imagem. Tente novamente ou salve sem imagem.');
+        setIsUploading(false);
+        return;
+      } finally {
+        setIsUploading(false);
+      }
+    }
+
     // Envia para a API
     createProduct(
       {
@@ -64,6 +121,7 @@ export const AdminCreateProductScreen = () => {
         quantidadeEstoque: qtdEstoque,
         precoCustoEmCentavos: custoEmCentavos,
         precoVendaEmCentavos: vendaEmCentavos,
+        imagemUrl: uploadedImageUrl,
       },
       {
         onSuccess: () => {
@@ -85,46 +143,57 @@ export const AdminCreateProductScreen = () => {
           Novo Biscoito
         </AppText>
 
+        <ImagePickerButton onPress={pickImage}>
+          {imageUri ? (
+            <SelectedImage source={{ uri: imageUri }} resizeMode="cover" />
+          ) : (
+            <View style={{ alignItems: 'center' }}>
+              <Ionicons name="camera-outline" size={40} color="#999" />
+              <AppText style={{ color: '#999', marginTop: 8 }}>Toque para adicionar foto</AppText>
+            </View>
+          )}
+        </ImagePickerButton>
+
         <Label>Nome do Produto</Label>
-        <InputField 
-          placeholder="Ex: Biscoito de Nata" 
+        <InputField
+          placeholder="Ex: Biscoito de Nata"
           value={nome}
           onChangeText={setNome}
         />
 
         <Label>Quantidade Inicial em Estoque</Label>
-        <InputField 
-          placeholder="Ex: 50" 
+        <InputField
+          placeholder="Ex: 50"
           keyboardType="number-pad"
           value={estoque}
           onChangeText={setEstoque}
         />
 
         <Label>Preço de Custo (R$)</Label>
-        <InputField 
-          placeholder="Ex: 2,50" 
+        <InputField
+          placeholder="Ex: 2,50"
           keyboardType="numeric"
           value={precoCusto}
           onChangeText={setPrecoCusto}
         />
 
         <Label>Preço de Venda (R$)</Label>
-        <InputField 
-          placeholder="Ex: 6,00" 
+        <InputField
+          placeholder="Ex: 6,00"
           keyboardType="numeric"
           value={precoVenda}
           onChangeText={setPrecoVenda}
         />
 
-        <LargeButton 
-          title="Cadastrar Produto" 
+        <LargeButton
+          title={isUploading ? "Enviando Imagem..." : "Cadastrar Produto"}
           onPress={handleSave}
-          isLoading={isPending}
+          isLoading={isPending || isUploading}
           style={{ marginTop: 20 }}
         />
-        
-        <LargeButton 
-          title="Cancelar" 
+
+        <LargeButton
+          title="Cancelar"
           variant="secondary"
           onPress={() => navigation.goBack()}
         />

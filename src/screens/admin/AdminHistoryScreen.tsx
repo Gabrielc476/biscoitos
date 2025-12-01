@@ -53,7 +53,7 @@ export const AdminHistoryScreen = () => {
 
   // 1. Buscar Vendas (TanStack Query)
   const { data: vendas, isLoading, error, refetch } = useSales();
-  
+
   // 2. Ação de Confirmar Pagamento (Mutation)
   const { mutate: confirmPayment, isPending: isConfirming } = useConfirmPayment();
 
@@ -115,8 +115,8 @@ export const AdminHistoryScreen = () => {
       <PageContainer style={{ justifyContent: 'center', alignItems: 'center' }}>
         <AppText type="heading">Erro</AppText>
         <AppText color="red">{error.message}</AppText>
-        <AppText 
-          onPress={() => refetch()} 
+        <AppText
+          onPress={() => refetch()}
           style={{ marginTop: 20, textDecorationLine: 'underline' }}
         >
           Tentar novamente
@@ -126,14 +126,18 @@ export const AdminHistoryScreen = () => {
   }
 
   return (
+
     <PageContainer>
       <HeaderContainer>
         <AppText type="heading">Histórico de Vendas</AppText>
         <AppText type="label">Toque em uma venda pendente para baixar.</AppText>
-        
-        {/* Botão para navegar para a Lista de Produtos / Estoque */}
+
         <ShortcutButton onPress={() => navigation.navigate('AdminProductList')}>
           <AppText type="accent">📦 Gerenciar Estoque →</AppText>
+        </ShortcutButton>
+
+        <ShortcutButton onPress={() => navigation.navigate('AdminOrders')} style={{ marginTop: 8 }}>
+          <AppText type="accent">📅 Gerenciar Encomendas →</AppText>
         </ShortcutButton>
       </HeaderContainer>
 
@@ -145,9 +149,9 @@ export const AdminHistoryScreen = () => {
         data={vendas}
         keyExtractor={(item) => item.vendaId}
         renderItem={({ item }) => (
-          <SaleCard 
-            venda={item} 
-            onPress={() => handlePressSale(item)} 
+          <SaleCard
+            venda={item}
+            onPress={() => handlePressSale(item)}
           />
         )}
         ListEmptyComponent={
@@ -165,6 +169,6 @@ export const AdminHistoryScreen = () => {
         }
         contentContainerStyle={{ paddingBottom: 80 }}
       />
-    </PageContainer>
+    </PageContainer >
   );
 };

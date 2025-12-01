@@ -1,17 +1,16 @@
 // src/components/design/PageContainer.tsx
 import React from 'react';
-import { SafeAreaView, ViewProps } from 'react-native';
-// [FIX] Importe o DefaultTheme
+import { ViewProps, Platform, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import styled, { DefaultTheme } from 'styled-components/native';
 
-// [FIX] Defina um tipo para as props com tema
 type ThemeProps = { theme: DefaultTheme };
 
 // Usamos 'SafeAreaView' para evitar o notch
 const StyledSafeArea = styled(SafeAreaView)`
   flex: 1;
-  /* [FIX] Adicione o tipo ThemeProps */
   background-color: ${(props: ThemeProps) => props.theme.colors.parchment};
+  padding-top: ${Platform.OS === 'android' ? StatusBar.currentHeight : 0}px;
 `;
 
 // O 'View' interno nos dá controle sobre o padding

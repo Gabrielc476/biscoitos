@@ -26,13 +26,15 @@ export const useSales = () => {
  * Hook para criar uma nova venda (POST /vendas).
  * Usado no checkout.
  */
-// CORREÇÃO: Removido o espaço extra em "=>"
 export const useCreateSale = () => {
-  // Não precisamos invalidar nada aqui, pois a nova venda
-  // ainda não está "Paga" e o fluxo segue para o pagamento.
-  // Se o usuário voltar ao Admin, a query ['sales'] será refetched.
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (newSale: CriarVendaInputDTO) => createSale(newSale),
+    onSuccess: () => {
+      // Invalida a lista de produtos para refletir a baixa no estoque imediatamente
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
   });
 };
 
@@ -61,9 +63,8 @@ export const useFetchPix = (vendaId: string) => {
  * Hook para confirmar o pagamento (PATCH /vendas/:id/pagar).
  * Usado pelo Admin.
  */
-// CORREÇÃO: Removido o espaço extra em "=>"
 export const useConfirmPayment = () => {
-  const queryClient = useQueryClient(); // Agora o TS vai encontrar isso
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (vendaId: string) => confirmPayment(vendaId),

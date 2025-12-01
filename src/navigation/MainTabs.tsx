@@ -7,7 +7,7 @@ import { AdminStack } from './AdminStack';
 import { useTheme } from 'styled-components/native';
 
 // (Precisaremos de ícones, por enquanto usaremos texto)
-// import { Ionicons } from '@expo/vector-icons'; 
+import { Ionicons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
 
@@ -18,17 +18,17 @@ export const MainTabs = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false, // Os headers estão nas Stacks internas
-        
+
         // --- Estilo "Scrapbook" para as Abas ---
         tabBarActiveTintColor: theme.colors.chocolate, // Cor da tinta
         tabBarInactiveTintColor: theme.colors.mutedBrown,
-        
+
         tabBarStyle: {
           backgroundColor: theme.colors.parchment, // Fundo de papel
           borderTopColor: theme.colors.mutedBrown, // Divisória
           borderTopWidth: 0.5,
         },
-        
+
         tabBarLabelStyle: {
           fontFamily: theme.fonts.body, // Fonte do caderno
           fontSize: 12,
@@ -40,9 +40,9 @@ export const MainTabs = () => {
         component={PdvStack}
         options={{
           title: 'PDV',
-          // tabBarIcon: ({ color, size }) => (
-          //   <Ionicons name="pricetag-outline" color={color} size={size} />
-          // ),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pricetag-outline" color={color} size={size} />
+          ),
         }}
       />
       <Tab.Screen
@@ -50,9 +50,9 @@ export const MainTabs = () => {
         component={AdminStack}
         options={{
           title: 'Admin',
-          // tabBarIcon: ({ color, size }) => (
-          //   <Ionicons name="clipboard-outline" color={color} size={size} />
-          // ),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="clipboard-outline" color={color} size={size} />
+          ),
         }}
       />
     </Tab.Navigator>

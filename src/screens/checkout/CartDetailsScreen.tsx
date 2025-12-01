@@ -96,7 +96,7 @@ const CartItemComponent = ({ item }: { item: CartItem }) => {
     // Converte "5,90" ou "5.90" para centavos
     const cleanValue = priceText.replace(',', '.');
     const floatValue = parseFloat(cleanValue);
-    
+
     if (!isNaN(floatValue) && floatValue >= 0) {
       updatePrice(item.produtoId, Math.round(floatValue * 100));
     } else {
@@ -119,7 +119,7 @@ const CartItemComponent = ({ item }: { item: CartItem }) => {
     <ItemRow>
       <ItemInfo>
         <AppText type="heading" style={{ fontSize: 18 }}>{item.nome}</AppText>
-        
+
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
           {isEditingPrice ? (
             <PriceInput
@@ -132,13 +132,13 @@ const CartItemComponent = ({ item }: { item: CartItem }) => {
             />
           ) : (
             <TouchableOpacity onPress={() => setIsEditingPrice(true)}>
-               {/* Mostra o preço unitário. O ícone de lápis é simbólico (texto) */}
+              {/* Mostra o preço unitário. O ícone de lápis é simbólico (texto) */}
               <AppText type="label" style={{ textDecorationLine: 'underline' }}>
                 {formatCurrency(item.precoVendaEmCentavos)} ✎
               </AppText>
             </TouchableOpacity>
           )}
-          
+
           <AppText type="label" style={{ marginLeft: 8 }}>
             (Total: {formatCurrency(item.precoVendaEmCentavos * item.quantidade)})
           </AppText>
@@ -150,11 +150,11 @@ const CartItemComponent = ({ item }: { item: CartItem }) => {
         <QtyButton onPress={() => decrementItem(item.produtoId)}>
           <AppText type="heading" style={{ fontSize: 18 }}>-</AppText>
         </QtyButton>
-        
+
         <AppText style={{ marginHorizontal: 4, fontWeight: 'bold' }}>
           {item.quantidade}
         </AppText>
-        
+
         <QtyButton onPress={handleIncrement}>
           <AppText type="heading" style={{ fontSize: 18 }}>+</AppText>
         </QtyButton>
@@ -172,14 +172,16 @@ const CartItemComponent = ({ item }: { item: CartItem }) => {
 
 export const CartDetailsScreen = () => {
   const navigation = useNavigation<CartDetailsNavProp>();
-  
+
   const items = useCartStore((state) => state.items);
   const totalEmCentavos = useCartStore((state) => state.totalEmCentavos);
   const clearCart = useCartStore((state) => state.clearCart);
-  
+  const activePromotions = useCartStore((state) => state.activePromotions);
+  const togglePromotion = useCartStore((state) => state.togglePromotion);
+
   const { mutate: createSale, isPending } = useCreateSale();
 
-  const formatTotal = (cents: number) => 
+  const formatTotal = (cents: number) =>
     (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const handleCheckout = () => {
@@ -190,19 +192,20 @@ export const CartDetailsScreen = () => {
         produtoId: item.produtoId,
         quantidade: item.quantidade,
       })),
+      promocoesSelecionadas: activePromotions,
     };
 
     createSale(dto, {
       onSuccess: (data) => {
+        clearCart(); // [FIX] Limpa o carrinho após o sucesso
         navigation.replace('PaymentOptions', {
           vendaId: data.vendaId,
           totalFormatado: data.totalFormatado,
         });
       },
-      // [FIX] Melhor tratamento de erro para ver a mensagem do backend
       onError: (error: any) => {
         console.log('Erro bruto:', error);
-        
+
         // Tenta pegar a mensagem enviada pelo servidor (backend)
         const serverMessage = error.response?.data?.message;
         const genericMessage = error.message;
@@ -215,10 +218,12 @@ export const CartDetailsScreen = () => {
   const handleClear = () => {
     Alert.alert('Limpar Carrinho', 'Tem certeza?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Limpar', style: 'destructive', onPress: () => {
-        clearCart();
-        navigation.goBack();
-      }}
+      {
+        text: 'Limpar', style: 'destructive', onPress: () => {
+          clearCart();
+          navigation.goBack();
+        }
+      }
     ]);
   };
 
@@ -243,6 +248,45 @@ export const CartDetailsScreen = () => {
         contentContainerStyle={{ paddingBottom: 100 }}
       />
 
+      {/* Seção de Promoções */}
+      <View style={{ marginTop: 10, padding: 16, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ddd', borderStyle: 'dashed' }}>
+        <AppText type="heading" style={{ fontSize: 18, marginBottom: 12 }}>Promoções</AppText>
+
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
+          onPress={() => togglePromotion('family')}
+        >
+          <View style={{
+            width: 24, height: 24, borderRadius: 4, borderWidth: 2, borderColor: '#5D4037',
+            backgroundColor: activePromotions.family ? '#5D4037' : 'transparent',
+            marginRight: 12, justifyContent: 'center', alignItems: 'center'
+          }}>
+            {activePromotions.family && <AppText style={{ color: '#fff', fontSize: 16 }}>✓</AppText>}
+          </View>
+          <View>
+            <AppText type="label">Amigos e Família</AppText>
+            <AppText style={{ fontSize: 12, color: '#666' }}>Itens de R$ 5,90 saem por R$ 4,60 (2 por R$ 8,00)</AppText>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center' }}
+          onPress={() => togglePromotion('special')}
+        >
+          <View style={{
+            width: 24, height: 24, borderRadius: 4, borderWidth: 2, borderColor: '#5D4037',
+            backgroundColor: activePromotions.special ? '#5D4037' : 'transparent',
+            marginRight: 12, justifyContent: 'center', alignItems: 'center'
+          }}>
+            {activePromotions.special && <AppText style={{ color: '#fff', fontSize: 16 }}>✓</AppText>}
+          </View>
+          <View>
+            <AppText type="label">Combo 2 Especiais</AppText>
+            <AppText style={{ fontSize: 12, color: '#666' }}>Itens de R$ 6,50 saem 2 por R$ 12,00</AppText>
+          </View>
+        </TouchableOpacity>
+      </View>
+
       <TotalFooter>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
           <AppText type="heading" style={{ fontSize: 24 }}>Total Final:</AppText>
@@ -251,16 +295,16 @@ export const CartDetailsScreen = () => {
           </AppText>
         </View>
 
-        <LargeButton 
-          title="Confirmar Venda" 
+        <LargeButton
+          title="Confirmar Venda"
           onPress={handleCheckout}
           isLoading={isPending}
           disabled={items.length === 0}
         />
-        
-        <LargeButton 
-          title="Voltar ao Catálogo" 
-          variant="secondary" 
+
+        <LargeButton
+          title="Voltar ao Catálogo"
+          variant="secondary"
           onPress={() => navigation.goBack()}
         />
       </TotalFooter>

@@ -9,6 +9,10 @@ export interface CriarVendaInputDTO {
     produtoId: string;
     quantidade: number;
   }>;
+  promocoesSelecionadas?: {
+    family?: boolean;
+    special?: boolean;
+  };
 }
 
 // POST /vendas (Output 201)

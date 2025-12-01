@@ -55,13 +55,23 @@ interface AdminProductCardProps {
   nome: string;
   precoFormatado: string;
   estoqueAtual: number;
+  imagemUrl?: string; // [NOVO]
 }
+
+const ProductImage = styled.Image`
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  margin-right: 12px;
+  background-color: #f0f0f0;
+`;
 
 export const AdminProductCard = ({
   id,
   nome,
   precoFormatado,
   estoqueAtual,
+  imagemUrl, // [NOVO]
 }: AdminProductCardProps) => {
   // Usa o hook de atualização de estoque
   const { mutate: updateStock, isPending } = useUpdateStock();
@@ -78,6 +88,11 @@ export const AdminProductCard = ({
 
   return (
     <CardContainer>
+      {/* Exibe a imagem se existir */}
+      {imagemUrl && (
+        <ProductImage source={{ uri: imagemUrl }} resizeMode="cover" />
+      )}
+
       <InfoColumn>
         <AppText type="heading" style={{ fontSize: 18 }}>
           {nome}
@@ -85,7 +100,7 @@ export const AdminProductCard = ({
         <AppText type="label">
           {precoFormatado} (Venda)
         </AppText>
-        
+
         <View style={{ flexDirection: 'row', marginTop: 6 }}>
           {estoqueAtual === 0 && (
             <AppText type="label" style={{ color: 'red', fontWeight: 'bold' }}>

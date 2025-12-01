@@ -3,10 +3,10 @@ import { FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import styled, { DefaultTheme } from 'styled-components/native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 
 import { PageContainer } from '@/components/design/PageContainer';
 import { AppText } from '@/components/design/AppText';
-// [FIX] Importe o novo cartão interativo
 import { AdminProductCard } from '@/components/features/AdminProductCard';
 import { useProducts } from '@/hooks/useProduct';
 import { AdminStackParamList } from '@/navigation/types';
@@ -35,9 +35,21 @@ const FabButton = styled(TouchableOpacity)`
   border-style: dashed;
 `;
 
+// Botão de Voltar
+const BackButton = styled.TouchableOpacity`
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 16px;
+  align-self: flex-start;
+`;
+
 export const AdminProductListScreen = () => {
   const navigation = useNavigation<AdminNavProp>();
   const { data: products, isLoading, refetch } = useProducts();
+
+  if (products && products.length > 0) {
+    console.log('🔍 [Screen] Produtos na tela:', JSON.stringify(products[0], null, 2));
+  }
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
@@ -56,6 +68,12 @@ export const AdminProductListScreen = () => {
 
   return (
     <PageContainer>
+      {/* Botão de Voltar */}
+      <BackButton onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#5D4037" />
+        <AppText type="label" style={{ marginLeft: 8, fontSize: 16 }}>Voltar</AppText>
+      </BackButton>
+
       <AppText type="heading" style={{ marginBottom: 16 }}>
         Estoque de Biscoitos
       </AppText>
@@ -64,12 +82,12 @@ export const AdminProductListScreen = () => {
         data={products}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          // [FIX] Removemos o 'pointerEvents: none' e usamos o componente correto
           <AdminProductCard
             id={item.id}
             nome={item.nome}
             precoFormatado={item.precoFormatado}
             estoqueAtual={item.quantidadeEstoque}
+            imagemUrl={item.imagemUrl}
           />
         )}
         refreshing={refreshing}

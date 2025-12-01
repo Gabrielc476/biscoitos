@@ -1,11 +1,9 @@
 // src/components/design/ProductCard.tsx
 import React from 'react';
-// [FIX] Importamos o 'DefaultTheme'
 import styled, { DefaultTheme } from 'styled-components/native';
 import { AppText } from './AppText';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, Image } from 'react-native';
 
-// [FIX] Definimos um tipo simples para as props de tema
 type ThemeProps = { theme: DefaultTheme };
 
 // O "cartão de ficha"
@@ -18,21 +16,20 @@ const CardContainer = styled.View`
   align-items: center;
 
   /* Simula a borda de polaroid */
-  /* [FIX] Adicionamos o tipo 'ThemeProps' */
   border: 1px solid ${(props: ThemeProps) => props.theme.colors.mutedBrown};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
 
-// Espaço para a foto (simulado)
-const ImagePlaceholder = styled.View`
+// Container da imagem (com ou sem foto)
+const ImageContainer = styled.View`
   width: 70px;
   height: 70px;
   border-radius: 6px;
-  /* [FIX] Adicionamos o tipo 'ThemeProps' */
   background-color: ${(props: ThemeProps) => props.theme.colors.parchment};
-  /* [FIX] Adicionamos o tipo 'ThemeProps' */
   border: 1px dashed ${(props: ThemeProps) => props.theme.colors.mutedBrown};
   margin-right: 12px;
+  overflow: hidden; /* Para cortar a imagem arredondada */
+  position: relative;
 
   /* "Washi tape" decorativa no canto */
   &::after {
@@ -42,11 +39,16 @@ const ImagePlaceholder = styled.View`
     left: -5px;
     width: 30px;
     height: 15px;
-    /* [FIX] Adicionamos o tipo 'ThemeProps' */
     background-color: ${(props: ThemeProps) => props.theme.colors.jamAccent};
     opacity: 0.6;
     transform: rotate(-15deg);
+    z-index: 10;
   }
+`;
+
+const ProductImage = styled.Image`
+  width: 100%;
+  height: 100%;
 `;
 
 // Coluna de informações
@@ -59,7 +61,6 @@ const AddButton = styled(TouchableOpacity)`
   width: 44px;
   height: 44px;
   border-radius: 22px;
-  /* [FIX] Adicionamos o tipo 'ThemeProps' */
   background-color: ${(props: ThemeProps) => props.theme.colors.cookieGold};
   justify-content: center;
   align-items: center;
@@ -70,6 +71,7 @@ interface ProductCardProps {
   nome: string;
   precoFormatado: string;
   estoque: number;
+  imagemUrl?: string | null; // [NOVO]
   onAddPress: () => void;
 }
 
@@ -77,13 +79,18 @@ export const ProductCard = ({
   nome,
   precoFormatado,
   estoque,
+  imagemUrl,
   onAddPress,
 }: ProductCardProps) => {
   const hasStock = estoque > 0;
 
   return (
     <CardContainer style={{ opacity: hasStock ? 1 : 0.5 }}>
-      <ImagePlaceholder />
+      <ImageContainer>
+        {imagemUrl ? (
+          <ProductImage source={{ uri: imagemUrl }} resizeMode="cover" />
+        ) : null}
+      </ImageContainer>
 
       <InfoColumn>
         <AppText type="heading" style={{ fontSize: 20 }}>

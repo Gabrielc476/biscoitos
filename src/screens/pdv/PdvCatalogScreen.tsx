@@ -12,8 +12,7 @@ import { CartFooter } from '@/components/features/CartFooter';
 
 // Nossos Hooks de Dados
 import { useProducts } from '@/hooks/useProduct';
-import { useCartStore } from '@/store/cartStore'; 
-// [FIX] Removemos o useCreateSale daqui, pois a venda agora é criada na tela de Detalhes
+import { useCartStore } from '@/store/cartStore';
 
 import { RootStackParamList } from '@/navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,12 +26,12 @@ type ThemeProps = { theme: DefaultTheme };
 
 export const PdvCatalogScreen = () => {
   const navigation = useNavigation<PdvNavigationProp>();
-  
+
   const { data: products, isLoading, error } = useProducts();
-  
+
   // Hooks do carrinho (Seletores separados para evitar loop)
   const addItem = useCartStore((state) => state.addItem);
-  
+
   // Função para o botão "Adicionar" no card
   const handleAddProduct = (product: ListarProdutosOutputDTO) => {
     if (!product.precoVendaEmCentavos) {
@@ -48,7 +47,7 @@ export const PdvCatalogScreen = () => {
     });
   };
 
-  // [FIX] NOVA FUNÇÃO: Apenas abre a tela de detalhes
+  // Apenas abre a tela de detalhes
   const handleOpenCart = () => {
     navigation.navigate('CartDetails');
   };
@@ -77,7 +76,8 @@ export const PdvCatalogScreen = () => {
     <ProductCard
       nome={item.nome}
       precoFormatado={item.precoFormatado}
-      estoque={item.quantidadeEstoque || 0} 
+      estoque={item.quantidadeEstoque || 0}
+      imagemUrl={item.imagemUrl}
       onAddPress={() => handleAddProduct(item)}
     />
   );
@@ -87,17 +87,16 @@ export const PdvCatalogScreen = () => {
       <AppText type="heading" style={{ marginBottom: 16 }}>
         Nossos Biscoitos
       </AppText>
-      
+
       <FlatList
         data={products}
         keyExtractor={(item) => item.id}
         renderItem={renderProductItem}
-        contentContainerStyle={{ paddingBottom: 120 }} 
+        contentContainerStyle={{ paddingBottom: 120 }}
       />
 
-      {/* [FIX] O rodapé agora chama handleOpenCart */}
       <CartFooter onPressCheckout={handleOpenCart} />
-      
+
     </PageContainer>
   );
 };
